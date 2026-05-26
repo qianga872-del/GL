@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -23,6 +24,18 @@ input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6
 .btnOut{width:100%;padding:12px;border:none;border-radius:6px;font-size:15px;background:#28a745;color:#fff;}
 .dateSelect{margin:15px 0;}
 .tip{color:red;font-size:13px;text-align:center;margin:8px 0;}
+/* 下拉框默认文字灰色 */
+#dateFilter{
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    color: #999;
+}
+#dateFilter option:not(:first-child){
+    color: #333;
+}
 </style>
 </head>
 <body>
@@ -61,6 +74,7 @@ input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6
 
   <div class="dateSelect">
     <select id="dateFilter">
+      <option value="" selected>Chọn ngày / 请选择日期</option>
       <option value="all">Tất cả ngày / 全部历史数据</option>
     </select>
   </div>
@@ -143,7 +157,7 @@ let dateSelect = document.getElementById('dateFilter');
 const todayStr = new Date().toISOString().split('T')[0];
 
 function refreshDateList(){
-  dateSelect.innerHTML = '<option value="all">Tất cả ngày / 全部历史数据</option>';
+  dateSelect.innerHTML = '<option value="" selected>Chọn ngày / 请选择日期</option><option value="all">Tất cả ngày / 全部历史数据</option>';
   const dateKeys = Object.keys(dataStore).sort().reverse();
   dateKeys.forEach(date=>{
     let opt = document.createElement('option');
@@ -191,11 +205,11 @@ table{border-collapse:collapse;width:100%;margin-top:20px;}
 th,td{border:1px solid #333;padding:10px;text-align:center;font-size:14px;}
 th{background:#f0f0f0;}
 img{max-height:60px;max-width:120px;}
-h2{text-align:center;margin:20px 0;}
+h2{text-align:center;margin:20px 0;font-size:16px;line-height:1.8;}
 </style>
 </head>
 <body>
-<h2>Danh sách nhân viên mới</h2>
+<h2>DANH SÁCH NHÂN VIÊN CAM KẾT TUÂN THỦ NỘI QUY QUY ĐỊNH VÀO CỔNG CÔNG TY GAIN LUCKY<br>员工承诺遵守德利公司进厂规定名单</h2>
 <table>
   <tr>
     <th>STT<br>序号</th>
@@ -245,7 +259,8 @@ function downloadFile(content, name){
 // 导出当日数据
 function exportByDate(){
   const d = dateSelect.value;
-  if(d === 'all'){ alert('Vui lòng chọn ngày\n请选择日期'); return; }
+  if(d === ""){ alert('Vui lòng chọn ngày\n请选择日期'); return; }
+  if(d === 'all'){ alert('Vui lòng chọn ngày cụ thể\n请选择具体日期'); return; }
   if(!dataStore[d] || dataStore[d].length === 0){ alert('Không có dữ liệu\n暂无数据'); return; }
   const html = buildTableHtml(dataStore[d]);
   if(isZaloBrowser()){
