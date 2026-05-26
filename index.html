@@ -11,8 +11,10 @@ body{background:#f4f4f4;padding:12px;overflow-x:hidden;touch-action:manipulation
 .wrap{max-width:600px;margin:0 auto;background:#fff;border-radius:10px;padding:20px;}
 h3{text-align:center;color:#222;font-size:15px;line-height:1.6;margin-bottom:15px;}
 .notice{border:1px solid #ccc;padding:12px;border-radius:6px;font-size:14px;line-height:1.7;color:#333;}
-/* 修改点：勾选框和文字同一行，居中且间距小 */
-.agree{margin:12px 0;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;}
+
+/* 勾选框与文字紧挨着、同一行 */
+.agree{margin:12px 0;display:flex;align-items:center;justify-content:center;gap:4px;font-size:14px;}
+
 input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6px;font-size:15px;}
 .signTit{margin:15px 0 8px;font-size:14px;}
 #signCanvas{width:100%;height:170px;border:1px solid #ccc;border-radius:6px;background:#fff;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
@@ -23,6 +25,13 @@ input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6
 .btnGroup{margin-top:15px;display:flex;flex-direction:column;gap:8px;}
 .btnOut{width:100%;padding:12px;border:none;border-radius:6px;font-size:15px;background:#28a745;color:#fff;}
 .dateSelect{margin:15px 0;}
+
+/* 二维码按钮样式 */
+#createQrBtn{background:#0066cc;color:#fff;}
+#createQrBtn:disabled{background:#999;color:#eee;cursor:not-allowed;}
+
+.qrBox{margin-top:15px;text-align:center;}
+#qrImg{max-width:200px;border:1px solid #ccc;padding:8px;background:#fff;}
 </style>
 </head>
 <body>
@@ -59,6 +68,14 @@ input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6
     <button class="btn btn1" onclick="submitData()">Gửi lưu<br>提交保存</button>
   </div>
 
+  <!-- 二维码按钮 + 显示区 -->
+  <div class="btnRow" style="margin-top:15px;">
+    <button id="createQrBtn" class="btn" onclick="generateQr()" disabled>CREATE QR<br>生成二维码</button>
+  </div>
+  <div class="qrBox" id="qrBox" style="display:none;">
+    <img id="qrImg" alt="QR Code">
+  </div>
+
   <div class="dateSelect">
     <select id="dateFilter" onchange="refreshDateList()">
       <option value="all">Tất cả ngày / 全部历史数据</option>
@@ -71,6 +88,9 @@ input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6
   </div>
 </div>
 
+<!-- 引入QR库（CDN，保证可用） -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+
 <script>
 const canvas = document.getElementById('signCanvas');
 const ctx = canvas.getContext('2d');
@@ -78,6 +98,33 @@ let drawFlag = false;
 let lastX = 0;
 let lastY = 0;
 
+// ========== 二维码按钮状态控制 ==========
+const chkAgree = document.getElementById('chkAgree');
+const createQrBtn = document.getElementById('createQrBtn');
+function toggleQrBtn(){
+  // 勾选同意 + 姓名不为空 → 按钮可点击
+  const ok = chkAgree.checked && document.getElementById('name').value.trim()!=='';
+  createQrBtn.disabled =!ok;
+}
+chkAgree.addEventListener('change', toggleQrBtn);
+document.getElementById('name').addEventListener('input', toggleQrBtn);
+
+// 生成二维码（当前页面URL）
+function generateQr(){
+  const url = window.location.href;
+  const qrImg = document.getElementById('qrImg');
+  const qrBox = document.getElementById('qrBox');
+  QRCode.toDataURL(url, {width:256}, function(err, dataUrl){
+    if(err){
+      alert('Lỗi tạo QR / 生成二维码失败');
+      return;
+    }
+    qrImg.src = dataUrl;
+    qrBox.style.display = 'block';
+  });
+}
+
+// ========== 签名画布 ==========
 function resizeCanvas(){
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
@@ -135,6 +182,7 @@ function bindEvent(){
   canvas.addEventListener('mouseleave', endDraw);
 }
 
+// ========== 数据存储 ==========
 let dataStore = {};
 try{
   const raw = localStorage.getItem('staffAllData');
@@ -190,6 +238,7 @@ function submitData(){
   location.reload();
 }
 
+// ========== 导出数据（修复：一定触发下载） ==========
 function buildTableHtml(list){
   let html = `
 <!DOCTYPE html>
@@ -233,63 +282,54 @@ h2{text-align:center;margin:20px 0;}
 }
 
 function exportByDate(){
-  try{
-    const chooseDate = dateSelect.value;
-    console.log('Ngày chọn:', chooseDate);
-
-    if(chooseDate === 'all'){
-      alert('Vui lòng chọn một ngày cụ thể\n请选择具体日期');
-      return;
-    }
-    if(!dataStore[chooseDate] || dataStore[chooseDate].length === 0){
-      alert(`Ngày ${chooseDate} không có dữ liệu\n该日期暂无数据，请先提交一条记录再试`);
-      return;
-    }
-
-    let html = buildTableHtml(dataStore[chooseDate]);
-    downloadFile(html, `DanhSach_NhanVien_${chooseDate}.html`);
-    alert(`Đã xuất file ngày ${chooseDate} thành công!\n导出成功！`);
-  }catch(e){
-    console.error('Lỗi exportByDate:', e);
-    alert('Lỗi khi xuất file: ' + e.message);
+  const chooseDate = dateSelect.value;
+  if(chooseDate === 'all'){
+    alert('Vui lòng chọn một ngày cụ thể\n请选择具体日期');
+    return;
   }
+  if(!dataStore[chooseDate] || dataStore[chooseDate].length === 0){
+    alert(`Ngày ${chooseDate} không có dữ liệu\n该日期暂无数据`);
+    return;
+  }
+  let html = buildTableHtml(dataStore[chooseDate]);
+  downloadFile(html, `DanhSach_NhanVien_${chooseDate}.html`);
+  alert(`Đã xuất file ngày ${chooseDate} thành công!\n导出成功！`);
 }
 
 function exportAllData(){
-  try{
-    let allList = [];
-    Object.keys(dataStore).forEach(date=>{
-      allList = allList.concat(dataStore[date]);
-    });
-    if(allList.length === 0){
-      alert('Chưa có dữ liệu nhân viên\n暂无员工登记数据');
-      return;
-    }
-    let html = buildTableHtml(allList);
-    downloadFile(html, "DanhSach_NhanVien_TatCa.html");
-    alert('Đã xuất tất cả dữ liệu thành công!\n导出成功！');
-  }catch(e){
-    console.error('Lỗi exportAllData:', e);
-    alert('Lỗi khi xuất file: ' + e.message);
+  let allList = [];
+  Object.keys(dataStore).forEach(date=>{
+    allList = allList.concat(dataStore[date]);
+  });
+  if(allList.length === 0){
+    alert('Chưa có dữ liệu nhân viên\n暂无员工登记数据');
+    return;
   }
+  let html = buildTableHtml(allList);
+  downloadFile(html, "DanhSach_NhanVien_TatCa.html");
+  alert('Đã xuất tất cả dữ liệu thành công!\n导出成功！');
 }
 
+// 强制触发下载（修复“点了没反应”）
 function downloadFile(content, fileName){
-  let blob = new Blob([content], {type: 'text/html;charset=utf-8'});
-  let url = URL.createObjectURL(blob);
-  let a = document.createElement('a');
+  const blob = new Blob([content], {type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
   a.href = url;
   a.download = fileName;
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(()=>{
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
 }
 
 window.addEventListener('load', ()=>{
   resizeCanvas();
   bindEvent();
   refreshDateList();
+  toggleQrBtn(); // 初始化二维码按钮状态
 });
 window.addEventListener('resize', resizeCanvas);
 </script>
