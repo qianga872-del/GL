@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -12,21 +13,7 @@ h3{text-align:center;color:#222;font-size:15px;line-height:1.6;margin-bottom:15p
 .notice{border:1px solid #ccc;padding:12px;border-radius:6px;font-size:14px;line-height:1.7;color:#333;}
 .agree{margin:12px 0;display:flex;align-items:center;justify-content:flex-start;gap:4px;font-size:14px;}
 #chkAgree{width:18px;height:18px;}
-input, #dateFilter{
-    width: 100%;
-    padding: 11px;
-    margin: 8px 0;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 15px;
-}
-/* 占位提示灰色 */
-input::placeholder, #dateFilter{
-    color: #999;
-}
-#dateFilter option{
-    color: #333;
-}
+input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6px;font-size:15px;}
 .signTit{margin:15px 0 8px;font-size:14px;}
 #signCanvas{width:100%;height:170px;border:1px solid #ccc;border-radius:6px;background:#fff;}
 .btnRow{display:flex;gap:10px;margin-top:12px;}
@@ -35,7 +22,22 @@ input::placeholder, #dateFilter{
 .btn2{background:#999;color:#fff;}
 .btnGroup{margin-top:15px;display:flex;flex-direction:column;gap:8px;}
 .btnOut{width:100%;padding:12px;border:none;border-radius:6px;font-size:15px;background:#28a745;color:#fff;}
+.dateSelect{margin:15px 0;}
 .tip{color:red;font-size:13px;text-align:center;margin:8px 0;}
+/* 下拉框样式同输入框 */
+#dateFilter{
+    width: 100%;
+    padding: 11px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    color: #999;
+    background: #fff;
+}
+#dateFilter option{
+    color: #333;
+}
 </style>
 </head>
 <body>
@@ -72,11 +74,13 @@ input::placeholder, #dateFilter{
     <button class="btn btn1" onclick="submitData()">Gửi lưu<br>提交保存</button>
   </div>
 
-  <!-- 日期选择框 样式同输入框 灰色提示 -->
-  <select id="dateFilter">
-    <option value="" selected>Chọn ngày / 请选择日期</option>
-    <option value="all">Tất cả ngày / 全部历史数据</option>
-  </select>
+  <!-- 仅在导出区保留日期筛选，供HR使用 -->
+  <div class="dateSelect">
+    <select id="dateFilter">
+      <option value="" selected>Chọn ngày / 请选择日期</option>
+      <option value="all">Tất cả ngày / 全部历史数据</option>
+    </select>
+  </div>
 
   <div class="tip">
 💡 Zalo: Chỉ xem bảng dữ liệu (không tải file)<br>
@@ -164,7 +168,6 @@ function refreshDateList(){
     opt.innerText = date;
     dateSelect.appendChild(opt);
   });
-  if(dateKeys.includes(todayStr)) dateSelect.value = todayStr;
 }
 
 function submitData(){
@@ -182,6 +185,7 @@ function submitData(){
     return;
   }
 
+  // 日期自动设为提交当天，无需员工选择
   const today = new Date().toISOString().split('T')[0];
   let signImg = canvas.toDataURL("image/png");
   let item = { name, cmnd, phone, joinDay, signImg, time: new Date().toLocaleString() };
