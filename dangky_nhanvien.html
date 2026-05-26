@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>德利(越南)有限公司 新员工登记</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+body{background:#f4f4f4;padding:12px;overflow-x:hidden;touch-action:manipulation;}
+.wrap{max-width:600px;margin:0 auto;background:#fff;border-radius:10px;padding:20px;}
+h3{text-align:center;color:#222;font-size:15px;line-height:1.6;margin-bottom:15px;}
+.notice{border:1px solid #ccc;padding:12px;border-radius:6px;max-height:180px;overflow-y:auto;font-size:14px;line-height:1.7;color:#333;}
+.agree{margin:12px 0;display:flex;align-items:center;gap:8px;font-size:14px;}
+input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6px;font-size:15px;}
+.signTit{margin:15px 0 8px;font-size:14px;}
+#signCanvas{width:100%;height:170px;border:1px solid #ccc;border-radius:6px;background:#fff;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+.btnRow{display:flex;gap:10px;margin-top:12px;}
+.btn{flex:1;padding:12px;border:none;border-radius:6px;font-size:15px;}
+.btn1{background:#0066cc;color:#fff;}
+.btn2{background:#999;color:#fff;}
+.btnGroup{margin-top:15px;display:flex;flex-direction:column;gap:8px;}
+.btnOut{width:100%;padding:12px;border:none;border-radius:6px;font-size:15px;background:#28a745;color:#fff;}
+.dateSelect{margin:15px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h3>CTY TNHH GAIN LUCKY (VIỆT NAM)<br>德利（越南）有限公司<br>Đăng ký thông tin nhân viên mới</h3>
+
+  <div class="notice">
+<strong>QUY ĐỊNH AN TOÀN KHUÔN VIỆC / 厂区安全规定</strong><br><br>
+1. Toàn bộ khuôn viên công ty cấm tuyệt đối lửa, khói thuốc lá, cấm mang vật dễ cháy nổ vào nhà xưởng.<br>
+本公司全域严禁烟火、禁止吸烟，严禁携带易燃易爆物品进入厂区。<br><br>
+2. Nghiêm cấm tự ý chụp ảnh, quay phim trong khu sản xuất và văn phòng.<br>
+严禁在生产区、办公区私自拍照、录像。<br><br>
+3. Nhân viên mới phải tuân thủ quy định cổng an ninh, phối hợp kiểm tra bộ phận an ninh.<br>
+新员工须遵守门禁制度，配合安保部门查验。<br><br>
+4. Vi phạm sẽ xử lý theo nội quy của công ty.<br>
+违规将按公司规章制度处理。
+  </div>
+
+  <div class="agree">
+    <input type="checkbox" id="chkAgree">
+    <label for="chkAgree">Tôi đã đọc & đồng ý / 已阅读并同意以上规定</label>
+  </div>
+
+  <input type="text" id="name" placeholder="Họ và tên / 姓名">
+  <input type="text" id="cmnd" placeholder="Số CMND / 身份证号码">
+  <input type="text" id="phone" placeholder="Số điện thoại / 手机号码">
+  <input type="date" id="joinDay" placeholder="Ngày vào làm / 入职日期">
+
+  <div class="signTit">Ký tay điện tử / 手写签名</div>
+  <canvas id="signCanvas"></canvas>
+
+  <div class="btnRow">
+    <button class="btn btn2" onclick="clearSign()">Xóa chữ ký<br>清除签名</button>
+    <button class="btn btn1" onclick="submitData()">Gửi lưu<br>提交保存</button>
+  </div>
+
+  <div class="dateSelect">
+    <select id="dateFilter" onchange="refreshDateList()">
+      <option value="all">Tất cả ngày / 全部历史数据</option>
+    </select>
+  </div>
+
+  <div class="btnGroup">
+    <button class="btnOut" onclick="exportByDate()">Xuất file ngày đã chọn / 导出当日数据</button>
+    <button class="btnOut" onclick="exportAllData()">Xuất tất cả dữ liệu / 导出全部历史数据</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('signCanvas');
+const ctx = canvas.getContext('2d');
+let drawFlag = false;
+let lastX = 0;
+let lastY = 0;
+
+function resizeCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#000';
+}
+
+function getPos(e){
+  const rect = canvas.getBoundingClientRect();
+  let x, y;
+  if(e.type.includes('touch')){
+    x = e.touches[0].clientX - rect.left;
+    y = e.touches[0].clientY - rect.top;
+  }else{
+    x = e.clientX - rect.left;
+    y = e.clientY - rect.top;
+  }
+  return {x, y};
+}
+
+function startDraw(e){
+  e.preventDefault();
+  drawFlag = true;
+  const pos = getPos(e);
+  lastX = pos.x;
+  lastY = pos.y;
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+}
+function moveDraw(e){
+  if(!drawFlag) return;
+  e.preventDefault();
+  const pos = getPos(e);
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+  lastX = pos.x;
+  lastY = pos.y;
+}
+function endDraw(){ drawFlag = false; }
+function clearSign(){ ctx.clearRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio); }
+
+function bindEvent(){
+  canvas.addEventListener('touchstart', startDraw, {passive:false});
+  canvas.addEventListener('touchmove', moveDraw, {passive:false});
+  canvas.addEventListener('touchend', endDraw);
+  canvas.addEventListener('touchcancel', endDraw);
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', moveDraw);
+  canvas.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
+}
+
+let dataStore = {};
+try{
+  const raw = localStorage.getItem('staffAllData');
+  if(raw) dataStore = JSON.parse(raw);
+}catch(e){
+  console.error('Lỗi đọc localStorage:', e);
+  alert('Lỗi dữ liệu, sẽ reset lại!');
+  dataStore = {};
+  localStorage.setItem('staffAllData', JSON.stringify(dataStore));
+}
+
+let dateSelect = document.getElementById('dateFilter');
+const todayStr = new Date().toISOString().split('T')[0];
+
+function refreshDateList(){
+  dateSelect.innerHTML = '<option value="all">Tất cả ngày / 全部历史数据</option>';
+  const dateKeys = Object.keys(dataStore).sort().reverse();
+  dateKeys.forEach(date => {
+    let opt = document.createElement('option');
+    opt.value = date;
+    opt.innerText = date;
+    dateSelect.appendChild(opt);
+  });
+  // 自动选中今天（如果有）
+  if(dateKeys.includes(todayStr)){
+    dateSelect.value = todayStr;
+  }
+}
+
+function submitData(){
+  if(!document.getElementById('chkAgree').checked){
+    alert('Vui lòng đọc và đồng ý quy định\n请先阅读并同意规定');
+    return;
+  }
+  let name = document.getElementById('name').value.trim();
+  let cmnd = document.getElementById('cmnd').value.trim();
+  let phone = document.getElementById('phone').value.trim();
+  let joinDay = document.getElementById('joinDay').value;
+
+  if(!name||!cmnd||!phone||!joinDay){
+    alert('Vui lòng điền đủ thông tin\n请填写完整所有资料');
+    return;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  let signImg = canvas.toDataURL("image/png");
+  let item = { name, cmnd, phone, joinDay, signImg, time: new Date().toLocaleString() };
+
+  if(!dataStore[today]) dataStore[today] = [];
+  dataStore[today].push(item);
+  localStorage.setItem('staffAllData', JSON.stringify(dataStore));
+
+  alert('Gửi thành công !\n提交成功 !');
+  location.reload();
+}
+
+function buildTableHtml(list){
+  let html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+table{border-collapse:collapse;width:100%;margin-top:20px;}
+th,td{border:1px solid #333;padding:10px;text-align:center;font-size:14px;}
+th{background:#f0f0f0;}
+img{max-height:60px;max-width:120px;}
+h2{text-align:center;margin:20px 0;}
+</style>
+</head>
+<body>
+<h2>Danh sách nhân viên mới - CTY TNHH GAIN LUCKY (VIỆT NAM)</h2>
+<table>
+  <tr>
+    <th>STT<br>序号</th>
+    <th>Họ tên<br>姓名</th>
+    <th>Số CMND<br>身份证</th>
+    <th>SĐT<br>手机号</th>
+    <th>Ngày vào làm<br>入职日期</th>
+    <th>Thời gian đăng ký<br>登记时间</th>
+    <th>Chữ ký<br>手写签名</th>
+  </tr>`;
+  list.forEach((row, index)=>{
+    html += `
+  <tr>
+    <td>${index + 1}</td>
+    <td>${row.name}</td>
+    <td>${row.cmnd}</td>
+    <td>${row.phone}</td>
+    <td>${row.joinDay}</td>
+    <td>${row.time}</td>
+    <td><img src="${row.signImg}"></td>
+  </tr>`;
+  });
+  html += `</table></body></html>`;
+  return html;
+}
+
+function exportByDate(){
+  try{
+    const chooseDate = dateSelect.value;
+    console.log('Ngày chọn:', chooseDate);
+
+    if(chooseDate === 'all'){
+      alert('Vui lòng chọn một ngày cụ thể\n请选择具体日期');
+      return;
+    }
+    if(!dataStore[chooseDate] || dataStore[chooseDate].length === 0){
+      alert(`Ngày ${chooseDate} không có dữ liệu\n该日期暂无数据，请先提交一条记录再试`);
+      return;
+    }
+
+    let html = buildTableHtml(dataStore[chooseDate]);
+    downloadFile(html, `DanhSach_NhanVien_${chooseDate}.html`);
+    alert(`Đã xuất file ngày ${chooseDate} thành công!\n导出成功！`);
+  }catch(e){
+    console.error('Lỗi exportByDate:', e);
+    alert('Lỗi khi xuất file: ' + e.message);
+  }
+}
+
+function exportAllData(){
+  try{
+    let allList = [];
+    Object.keys(dataStore).forEach(date=>{
+      allList = allList.concat(dataStore[date]);
+    });
+    if(allList.length === 0){
+      alert('Chưa có dữ liệu nhân viên\n暂无员工登记数据');
+      return;
+    }
+    let html = buildTableHtml(allList);
+    downloadFile(html, "DanhSach_NhanVien_TatCa.html");
+    alert('Đã xuất tất cả dữ liệu thành công!\n导出成功！');
+  }catch(e){
+    console.error('Lỗi exportAllData:', e);
+    alert('Lỗi khi xuất file: ' + e.message);
+  }
+}
+
+function downloadFile(content, fileName){
+  let blob = new Blob([content], {type: 'text/html;charset=utf-8'});
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+window.addEventListener('load', ()=>{
+  resizeCanvas();
+  bindEvent();
+  refreshDateList();
+});
+window.addEventListener('resize', resizeCanvas);
+</script>
+</body>
+</html>
