@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -20,24 +19,9 @@ input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6
 .btn{flex:1;padding:12px;border:none;border-radius:6px;font-size:15px;}
 .btn1{background:#0066cc;color:#fff;}
 .btn2{background:#999;color:#fff;}
-.btnGroup{margin-top:15px;display:flex;flex-direction:column;gap:8px;}
+.btnGroup{margin-top:20px;display:flex;flex-direction:column;gap:8px;}
 .btnOut{width:100%;padding:12px;border:none;border-radius:6px;font-size:15px;background:#28a745;color:#fff;}
-.dateSelect{margin:15px 0;}
 .tip{color:red;font-size:13px;text-align:center;margin:8px 0;}
-/* 下拉框样式同输入框 */
-#dateFilter{
-    width: 100%;
-    padding: 11px;
-    margin: 8px 0;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 15px;
-    color: #999;
-    background: #fff;
-}
-#dateFilter option{
-    color: #333;
-}
 </style>
 </head>
 <body>
@@ -74,22 +58,14 @@ input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6
     <button class="btn btn1" onclick="submitData()">Gửi lưu<br>提交保存</button>
   </div>
 
-  <!-- 仅在导出区保留日期筛选，供HR使用 -->
-  <div class="dateSelect">
-    <select id="dateFilter">
-      <option value="" selected>Chọn ngày / 请选择日期</option>
-      <option value="all">Tất cả ngày / 全部历史数据</option>
-    </select>
-  </div>
-
   <div class="tip">
 💡 Zalo: Chỉ xem bảng dữ liệu (không tải file)<br>
 💡 Chrome: Tải file .html thành công
   </div>
 
   <div class="btnGroup">
-    <button class="btnOut" onclick="exportByDate()">Xuất file ngày đã chọn / 导出当日数据</button>
-    <button class="btnOut" onclick="exportAllData()">Xuất tất cả dữ liệu / 导出全部历史数据</button>
+    <button class="btnOut" onclick="exportToday()">Xuất dữ liệu ngày hôm nay / 导出今日数据</button>
+    <button class="btnOut" onclick="exportAllData()">Xuất tất cả dữ liệu / 导出全部数据</button>
   </div>
 </div>
 
@@ -98,7 +74,7 @@ const canvas = document.getElementById('signCanvas');
 const ctx = canvas.getContext('2d');
 let drawFlag = false, lastX = 0, lastY = 0;
 
-// 识别Zalo内置浏览器
+// 识别Zalo浏览器
 function isZaloBrowser(){
   return navigator.userAgent.includes('Zalo');
 }
@@ -156,20 +132,8 @@ function bindEvent(){
 }
 
 let dataStore = JSON.parse(localStorage.getItem('staffAllData')) || {};
-let dateSelect = document.getElementById('dateFilter');
-const todayStr = new Date().toISOString().split('T')[0];
 
-function refreshDateList(){
-  dateSelect.innerHTML = '<option value="" selected>Chọn ngày / 请选择日期</option><option value="all">Tất cả ngày / 全部历史数据</option>';
-  const dateKeys = Object.keys(dataStore).sort().reverse();
-  dateKeys.forEach(date=>{
-    let opt = document.createElement('option');
-    opt.value = date;
-    opt.innerText = date;
-    dateSelect.appendChild(opt);
-  });
-}
-
+// 提交数据：自动获取当天日期，无需手动选择
 function submitData(){
   if(!document.getElementById('chkAgree').checked){
     alert('Vui lòng đọc và đồng ý quy định\n请先阅读并同意规定');
@@ -185,7 +149,6 @@ function submitData(){
     return;
   }
 
-  // 日期自动设为提交当天，无需员工选择
   const today = new Date().toISOString().split('T')[0];
   let signImg = canvas.toDataURL("image/png");
   let item = { name, cmnd, phone, joinDay, signImg, time: new Date().toLocaleString() };
@@ -197,6 +160,7 @@ function submitData(){
   location.reload();
 }
 
+// 生成报表HTML
 function buildTableHtml(list){
   return `
 <!DOCTYPE html>
@@ -237,14 +201,14 @@ h2{text-align:center;margin:20px 0;font-size:16px;line-height:1.8;}
 </body></html>`;
 }
 
-// 新标签页打开表格
+// 新标签页打开表格(Zalo)
 function openInNewTab(html){
   const w = window.open('','_blank');
   w.document.write(html);
   w.document.close();
 }
 
-// 下载文件
+// 下载文件(Chrome)
 function downloadFile(content, name){
   let blob = new Blob([content], {type:'text/html;charset=utf-8'});
   let url = URL.createObjectURL(blob);
@@ -259,25 +223,29 @@ function downloadFile(content, name){
   },100);
 }
 
-// 导出当日数据
-function exportByDate(){
-  const d = dateSelect.value;
-  if(d === ""){ alert('Vui lòng chọn ngày\n请选择日期'); return; }
-  if(d === 'all'){ alert('Vui lòng chọn ngày cụ thể\n请选择具体日期'); return; }
-  if(!dataStore[d] || dataStore[d].length === 0){ alert('Không có dữ liệu\n暂无数据'); return; }
-  const html = buildTableHtml(dataStore[d]);
+// 导出今日数据
+function exportToday(){
+  const today = new Date().toISOString().split('T')[0];
+  if(!dataStore[today] || dataStore[today].length === 0){
+    alert('Không có dữ liệu ngày hôm nay\n今日暂无数据');
+    return;
+  }
+  const html = buildTableHtml(dataStore[today]);
   if(isZaloBrowser()){
     openInNewTab(html);
   }else{
-    downloadFile(html, `DanhSach_${d}.html`);
+    downloadFile(html, `DanhSach_${today}.html`);
   }
 }
 
 // 导出全部数据
 function exportAllData(){
   let all = [];
-  Object.values(dataStore).forEach(a=>all=all.concat(a));
-  if(all.length===0){alert('Chưa có dữ liệu\n暂无数据');return;}
+  Object.values(dataStore).forEach(arr=> all = all.concat(arr));
+  if(all.length === 0){
+    alert('Chưa có dữ liệu\n暂无数据');
+    return;
+  }
   const html = buildTableHtml(all);
   if(isZaloBrowser()){
     openInNewTab(html);
@@ -289,7 +257,6 @@ function exportAllData(){
 window.onload = function(){
   resizeCanvas();
   bindEvent();
-  refreshDateList();
 }
 </script>
 </body>
