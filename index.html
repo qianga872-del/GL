@@ -12,7 +12,18 @@ h3{text-align:center;color:#222;font-size:15px;line-height:1.6;margin-bottom:15p
 .notice{border:1px solid #ccc;padding:12px;border-radius:6px;font-size:14px;line-height:1.7;color:#333;}
 .agree{margin:12px 0;display:flex;align-items:center;justify-content:flex-start;gap:4px;font-size:14px;}
 #chkAgree{width:18px;height:18px;}
-input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6px;font-size:15px;}
+input{
+    width:100%;
+    padding:11px;
+    margin:8px 0;
+    border:1px solid #ddd;
+    border-radius:6px;
+    font-size:15px;
+}
+/* 统一占位文字灰色 */
+input::placeholder{
+    color:#999;
+}
 .signTit{margin:15px 0 8px;font-size:14px;}
 #signCanvas{width:100%;height:170px;border:1px solid #ccc;border-radius:6px;background:#fff;}
 .btnRow{display:flex;gap:10px;margin-top:12px;}
@@ -48,7 +59,8 @@ input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6
   <input type="text" id="name" placeholder="Họ và tên / 姓名">
   <input type="text" id="cmnd" placeholder="Số CMND / 身份证号码">
   <input type="text" id="phone" placeholder="Số điện thoại / 手机号码">
-  <input type="date" id="joinDay" placeholder="Ngày vào làm / 入职日期">
+  <!-- 入职日期框添加中越双语灰色提示 -->
+  <input type="date" id="joinDay" placeholder="Ngày vào làm / 请输入日期">
 
   <div class="signTit">Ký tay điện tử / 手写签名</div>
   <canvas id="signCanvas"></canvas>
@@ -74,7 +86,7 @@ const canvas = document.getElementById('signCanvas');
 const ctx = canvas.getContext('2d');
 let drawFlag = false, lastX = 0, lastY = 0;
 
-// 识别Zalo浏览器
+// 识别Zalo内置浏览器
 function isZaloBrowser(){
   return navigator.userAgent.includes('Zalo');
 }
@@ -133,7 +145,7 @@ function bindEvent(){
 
 let dataStore = JSON.parse(localStorage.getItem('staffAllData')) || {};
 
-// 提交数据：自动获取当天日期，无需手动选择
+// 提交数据：自动获取当日日期分类存档
 function submitData(){
   if(!document.getElementById('chkAgree').checked){
     alert('Vui lòng đọc và đồng ý quy định\n请先阅读并同意规定');
@@ -149,18 +161,19 @@ function submitData(){
     return;
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  // 系统自动记录提交当天日期，用于数据分组
+  const submitDate = new Date().toISOString().split('T')[0];
   let signImg = canvas.toDataURL("image/png");
   let item = { name, cmnd, phone, joinDay, signImg, time: new Date().toLocaleString() };
 
-  if(!dataStore[today]) dataStore[today] = [];
-  dataStore[today].push(item);
+  if(!dataStore[submitDate]) dataStore[submitDate] = [];
+  dataStore[submitDate].push(item);
   localStorage.setItem('staffAllData', JSON.stringify(dataStore));
   alert('Gửi thành công !\n提交成功 !');
   location.reload();
 }
 
-// 生成报表HTML
+// 生成报表内容
 function buildTableHtml(list){
   return `
 <!DOCTYPE html>
@@ -201,14 +214,14 @@ h2{text-align:center;margin:20px 0;font-size:16px;line-height:1.8;}
 </body></html>`;
 }
 
-// 新标签页打开表格(Zalo)
+// Zalo：新标签页预览表格
 function openInNewTab(html){
   const w = window.open('','_blank');
   w.document.write(html);
   w.document.close();
 }
 
-// 下载文件(Chrome)
+// Chrome：下载html文件
 function downloadFile(content, name){
   let blob = new Blob([content], {type:'text/html;charset=utf-8'});
   let url = URL.createObjectURL(blob);
