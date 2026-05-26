@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -13,7 +12,21 @@ h3{text-align:center;color:#222;font-size:15px;line-height:1.6;margin-bottom:15p
 .notice{border:1px solid #ccc;padding:12px;border-radius:6px;font-size:14px;line-height:1.7;color:#333;}
 .agree{margin:12px 0;display:flex;align-items:center;justify-content:flex-start;gap:4px;font-size:14px;}
 #chkAgree{width:18px;height:18px;}
-input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6px;font-size:15px;}
+input, #dateFilter{
+    width: 100%;
+    padding: 11px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+}
+/* 占位提示灰色 */
+input::placeholder, #dateFilter{
+    color: #999;
+}
+#dateFilter option{
+    color: #333;
+}
 .signTit{margin:15px 0 8px;font-size:14px;}
 #signCanvas{width:100%;height:170px;border:1px solid #ccc;border-radius:6px;background:#fff;}
 .btnRow{display:flex;gap:10px;margin-top:12px;}
@@ -22,22 +35,7 @@ input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6
 .btn2{background:#999;color:#fff;}
 .btnGroup{margin-top:15px;display:flex;flex-direction:column;gap:8px;}
 .btnOut{width:100%;padding:12px;border:none;border-radius:6px;font-size:15px;background:#28a745;color:#fff;}
-.dateSelect{margin:15px 0;}
 .tip{color:red;font-size:13px;text-align:center;margin:8px 0;}
-/* 下拉框样式同输入框，默认文字灰色 */
-#dateFilter{
-    width: 100%;
-    padding: 11px;
-    margin: 8px 0;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 15px;
-    color: #999;
-    background: #fff;
-}
-#dateFilter option{
-    color: #333;
-}
 </style>
 </head>
 <body>
@@ -49,7 +47,7 @@ input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6
 1. Toàn bộ khuôn viên công ty cấm tuyệt đối lửa, khói thuốc lá, cấm mang vật dễ cháy nổ vào nhà xưởng.<br>
 本公司全域严禁烟火、禁止吸烟，严禁携带易燃易爆物品进入厂区。<br><br>
 2. Nghiêm cấm tự ý chụp ảnh, quay phim trong khu sản xuất và văn phòng.<br>
-严禁在生产区、办公区、私自拍照、录像。<br><br>
+严禁在生产区、办公区私自拍照、录像。<br><br>
 3. Nhân viên mới phải tuân thủ quy định cổng an ninh, phối hợp kiểm tra bộ phận an ninh.<br>
 新员工须遵守门禁制度，配合安保部门查验。<br><br>
 4. Vi phạm sẽ xử lý theo nội quy của công ty.<br>
@@ -74,13 +72,11 @@ input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6
     <button class="btn btn1" onclick="submitData()">Gửi lưu<br>提交保存</button>
   </div>
 
-  <!-- 原日期栏，仅内部修改默认提示文字 -->
-  <div class="dateSelect">
-    <select id="dateFilter">
-      <option value="" selected>Chọn ngày / 请选择日期</option>
-      <option value="all">Tất cả ngày / 全部历史数据</option>
-    </select>
-  </div>
+  <!-- 日期选择框 样式同输入框 灰色提示 -->
+  <select id="dateFilter">
+    <option value="" selected>Chọn ngày / 请选择日期</option>
+    <option value="all">Tất cả ngày / 全部历史数据</option>
+  </select>
 
   <div class="tip">
 💡 Zalo: Chỉ xem bảng dữ liệu (không tải file)<br>
