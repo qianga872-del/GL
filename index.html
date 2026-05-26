@@ -20,7 +20,6 @@ input{
     border-radius:6px;
     font-size:15px;
 }
-/* 统一占位文字灰色 */
 input::placeholder{
     color:#999;
 }
@@ -59,8 +58,6 @@ input::placeholder{
   <input type="text" id="name" placeholder="Họ và tên / 姓名">
   <input type="text" id="cmnd" placeholder="Số CMND / 身份证号码">
   <input type="text" id="phone" placeholder="Số điện thoại / 手机号码">
-  <!-- 入职日期框添加中越双语灰色提示 -->
-  <input type="date" id="joinDay" placeholder="Ngày vào làm / 请输入日期">
 
   <div class="signTit">Ký tay điện tử / 手写签名</div>
   <canvas id="signCanvas"></canvas>
@@ -86,7 +83,6 @@ const canvas = document.getElementById('signCanvas');
 const ctx = canvas.getContext('2d');
 let drawFlag = false, lastX = 0, lastY = 0;
 
-// 识别Zalo内置浏览器
 function isZaloBrowser(){
   return navigator.userAgent.includes('Zalo');
 }
@@ -145,7 +141,6 @@ function bindEvent(){
 
 let dataStore = JSON.parse(localStorage.getItem('staffAllData')) || {};
 
-// 提交数据：自动获取当日日期分类存档
 function submitData(){
   if(!document.getElementById('chkAgree').checked){
     alert('Vui lòng đọc và đồng ý quy định\n请先阅读并同意规定');
@@ -154,17 +149,15 @@ function submitData(){
   let name = document.getElementById('name').value.trim();
   let cmnd = document.getElementById('cmnd').value.trim();
   let phone = document.getElementById('phone').value.trim();
-  let joinDay = document.getElementById('joinDay').value;
 
-  if(!name||!cmnd||!phone||!joinDay){
+  if(!name||!cmnd||!phone){
     alert('Vui lòng điền đủ thông tin\n请填写完整所有资料');
     return;
   }
 
-  // 系统自动记录提交当天日期，用于数据分组
   const submitDate = new Date().toISOString().split('T')[0];
   let signImg = canvas.toDataURL("image/png");
-  let item = { name, cmnd, phone, joinDay, signImg, time: new Date().toLocaleString() };
+  let item = { name, cmnd, phone, signImg, time: new Date().toLocaleString() };
 
   if(!dataStore[submitDate]) dataStore[submitDate] = [];
   dataStore[submitDate].push(item);
@@ -173,7 +166,6 @@ function submitData(){
   location.reload();
 }
 
-// 生成报表内容
 function buildTableHtml(list){
   return `
 <!DOCTYPE html>
@@ -196,7 +188,6 @@ h2{text-align:center;margin:20px 0;font-size:16px;line-height:1.8;}
     <th>Họ tên<br>姓名</th>
     <th>Số CMND<br>身份证</th>
     <th>SĐT<br>手机号</th>
-    <th>Ngày vào làm<br>入职日期</th>
     <th>Thời gian đăng ký<br>登记时间</th>
     <th>Chữ ký<br>手写签名</th>
   </tr>
@@ -206,7 +197,6 @@ h2{text-align:center;margin:20px 0;font-size:16px;line-height:1.8;}
     <td>${row.name}</td>
     <td>${row.cmnd}</td>
     <td>${row.phone}</td>
-    <td>${row.joinDay}</td>
     <td>${row.time}</td>
     <td><img src="${row.signImg}"></td>
   </tr>`).join('')}
@@ -214,14 +204,12 @@ h2{text-align:center;margin:20px 0;font-size:16px;line-height:1.8;}
 </body></html>`;
 }
 
-// Zalo：新标签页预览表格
 function openInNewTab(html){
   const w = window.open('','_blank');
   w.document.write(html);
   w.document.close();
 }
 
-// Chrome：下载html文件
 function downloadFile(content, name){
   let blob = new Blob([content], {type:'text/html;charset=utf-8'});
   let url = URL.createObjectURL(blob);
@@ -236,7 +224,6 @@ function downloadFile(content, name){
   },100);
 }
 
-// 导出今日数据
 function exportToday(){
   const today = new Date().toISOString().split('T')[0];
   if(!dataStore[today] || dataStore[today].length === 0){
@@ -251,7 +238,6 @@ function exportToday(){
   }
 }
 
-// 导出全部数据
 function exportAllData(){
   let all = [];
   Object.values(dataStore).forEach(arr=> all = all.concat(arr));
