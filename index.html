@@ -11,10 +11,10 @@ body{background:#f4f4f4;padding:12px;overflow-x:hidden;touch-action:manipulation
 .wrap{max-width:600px;margin:0 auto;background:#fff;border-radius:10px;padding:20px;}
 h3{text-align:center;color:#222;font-size:15px;line-height:1.6;margin-bottom:15px;}
 .notice{border:1px solid #ccc;padding:12px;border-radius:6px;font-size:14px;line-height:1.7;color:#333;}
-.agree{margin:12px 0;display:flex;align-items:center;justify-content:center;gap:4px;font-size:14px;}
+.agree{margin:12px 0;display:flex;align-items:center;justify-content:flex-start;gap:4px;font-size:14px;}
 input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6px;font-size:15px;}
 .signTit{margin:15px 0 8px;font-size:14px;}
-#signCanvas{width:100%;height:170px;border:1px solid #ccc;border-radius:6px;background:#fff;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+#signCanvas{width:100%;height:170px;border:1px solid #ccc;border-radius:6px;background:#fff;}
 .btnRow{display:flex;gap:10px;margin-top:12px;}
 .btn{flex:1;padding:12px;border:none;border-radius:6px;font-size:15px;}
 .btn1{background:#0066cc;color:#fff;}
@@ -22,6 +22,7 @@ input{width:100%;padding:11px;margin:8px 0;border:1px solid #ddd;border-radius:6
 .btnGroup{margin-top:15px;display:flex;flex-direction:column;gap:8px;}
 .btnOut{width:100%;padding:12px;border:none;border-radius:6px;font-size:15px;background:#28a745;color:#fff;}
 .dateSelect{margin:15px 0;}
+#chkAgree{width:18px;height:18px;}
 </style>
 </head>
 <body>
@@ -75,7 +76,6 @@ const canvas = document.getElementById('signCanvas');
 const ctx = canvas.getContext('2d');
 let drawFlag = false, lastX = 0, lastY = 0;
 
-// 画布适配
 function resizeCanvas(){
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
@@ -84,7 +84,6 @@ function resizeCanvas(){
   ctx.scale(dpr, dpr);
   ctx.lineWidth = 2;
   ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
   ctx.strokeStyle = '#000';
 }
 
@@ -129,12 +128,10 @@ function bindEvent(){
   canvas.addEventListener('mouseleave', endDraw);
 }
 
-// 数据存储
 let dataStore = JSON.parse(localStorage.getItem('staffAllData')) || {};
 let dateSelect = document.getElementById('dateFilter');
 const todayStr = new Date().toISOString().split('T')[0];
 
-// 刷新日期列表
 function refreshDateList(){
   dateSelect.innerHTML = '<option value="all">Tất cả ngày / 全部历史数据</option>';
   const dateKeys = Object.keys(dataStore).sort().reverse();
@@ -147,7 +144,6 @@ function refreshDateList(){
   if(dateKeys.includes(todayStr)) dateSelect.value = todayStr;
 }
 
-// 提交数据
 function submitData(){
   if(!document.getElementById('chkAgree').checked){
     alert('Vui lòng đọc và đồng ý quy định\n请先阅读并同意规定');
@@ -170,29 +166,26 @@ function submitData(){
   if(!dataStore[today]) dataStore[today] = [];
   dataStore[today].push(item);
   localStorage.setItem('staffAllData', JSON.stringify(dataStore));
-
   alert('Gửi thành công !\n提交成功 !');
   location.reload();
 }
 
-// 生成表格HTML
-function buildTable(list, title){
+function buildTableHtml(list){
   return `
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>${title}</title>
 <style>
-body{padding:20px;}
 table{border-collapse:collapse;width:100%;margin-top:20px;}
 th,td{border:1px solid #333;padding:10px;text-align:center;font-size:14px;}
 th{background:#f0f0f0;}
 img{max-height:60px;max-width:120px;}
-h2{text-align:center;}
+h2{text-align:center;margin:20px 0;}
 </style>
 </head>
 <body>
-<h2>${title}</h2>
+<h2>Danh sách nhân viên mới</h2>
 <table>
   <tr>
     <th>STT<br>序号</th>
@@ -203,57 +196,48 @@ h2{text-align:center;}
     <th>Thời gian đăng ký<br>登记时间</th>
     <th>Chữ ký<br>手写签名</th>
   </tr>
-  ${list.map((row,idx)=>`
+  ${list.map((row,i)=>`
   <tr>
-    <td>${idx+1}</td>
+    <td>${i+1}</td>
     <td>${row.name}</td>
     <td>${row.cmnd}</td>
     <td>${row.phone}</td>
     <td>${row.joinDay}</td>
     <td>${row.time}</td>
     <td><img src="${row.signImg}"></td>
-  </tr>
-  `).join('')}
+  </tr>`).join('')}
 </table>
-</body>
-</html>`;
+</body></html>`;
 }
 
-// 核心改动：新标签页打开表格（彻底解决浏览器拦截下载问题）
-function openNewTab(html){
-  const newWin = window.open('', '_blank');
-  newWin.document.write(html);
-  newWin.document.close();
+function downloadFile(content, name){
+  let blob = new Blob([content], {type:'text/html;charset=utf-8'});
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
 }
 
-// 导出当日数据
 function exportByDate(){
-  const chooseDate = dateSelect.value;
-  if(chooseDate === 'all'){
-    alert('Vui lòng chọn một ngày cụ thể\n请选择具体日期');
-    return;
-  }
-  if(!dataStore[chooseDate] || dataStore[chooseDate].length === 0){
-    alert(`Ngày ${chooseDate} không có dữ liệu\n该日期暂无数据`);
-    return;
-  }
-  const tableHtml = buildTable(dataStore[chooseDate], `Danh sách ${chooseDate}`);
-  openNewTab(tableHtml);
+  const d = dateSelect.value;
+  if(d === 'all'){ alert('Vui lòng chọn ngày\n请选择日期'); return; }
+  if(!dataStore[d] || dataStore[d].length === 0){ alert('Không có dữ liệu\n暂无数据'); return; }
+  downloadFile(buildTableHtml(dataStore[d]), `DanhSach_${d}.html`);
 }
 
-// 导出全部数据
 function exportAllData(){
-  let allList = [];
-  Object.values(dataStore).forEach(arr=> allList = allList.concat(arr));
-  if(allList.length === 0){
-    alert('Chưa có dữ liệu nhân viên\n暂无员工登记数据');
-    return;
-  }
-  const tableHtml = buildTable(allList, "Tất cả danh sách nhân viên");
-  openNewTab(tableHtml);
+  let all = [];
+  Object.values(dataStore).forEach(a=>all=all.concat(a));
+  if(all.length===0){alert('Chưa có dữ liệu\n暂无数据');return;}
+  downloadFile(buildTableHtml(all), `DanhSach_TatCa.html`);
 }
 
-// 页面初始化
 window.onload = function(){
   resizeCanvas();
   bindEvent();
